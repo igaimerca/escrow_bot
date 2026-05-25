@@ -56,6 +56,7 @@ async def main():
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
     dp.update.outer_middleware(UpdateLoggerMiddleware())
+    dp.update.outer_middleware(common.MenuShortcutMiddleware())
 
     # Register routers
     dp.include_router(common.router)

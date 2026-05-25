@@ -7,9 +7,9 @@ import os
 from pathlib import Path
 import random
 import string
-from aiogram import Router, F
-from aiogram.filters import CommandStart, Command
-from aiogram.types import CallbackQuery, FSInputFile, Message
+from aiogram import BaseMiddleware, Router, F
+from aiogram.filters import CommandStart, Command, StateFilter
+from aiogram.types import CallbackQuery, FSInputFile, Message, Update
 from aiogram.fsm.context import FSMContext
 from database import SessionLocal, User, init_db
 from keyboards import main_menu, main_menu_inline
@@ -20,11 +20,13 @@ router = Router()
 init_db()
 WELCOME_VIDEO_PATH = Path(__file__).resolve().parent.parent / "public" / "TrustHold Escrow Bolt.mp4"
 WELCOME_VIDEO_FILE_ID = os.getenv("WELCOME_VIDEO_FILE_ID", "")
+TERMS_MENU_TEXT = "📜 Terms & Rules"
+TERMS_CALLBACK_DATA = "menu:terms"
 
 
 def build_terms_text() -> str:
     return (
-        f"📜 {BOT_NAME} — Terms & Rules\n\n"
+        "📜 Escrow Bot — Terms & Rules\n\n"
         "By using this escrow bot, both buyer and seller agree to the following terms and conditions.\n\n"
         "1. Neutral Middleman\n\n"
         "The escrow bot acts only as a neutral middleman between both parties during transactions.\n\n"
@@ -74,6 +76,27 @@ def build_terms_text() -> str:
         "Never send funds outside the escrow bot.\n"
         "Admins will never DM first."
     )
+
+
+class MenuShortcutMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event: Update, data):
+        state = data.get("state")
+
+        if event.message and event.message.text == TERMS_MENU_TEXT:
+            if state is not None:
+                await state.clear()
+            await event.message.answer(build_terms_text(), parse_mode="Markdown")
+            return
+
+        if event.callback_query and event.callback_query.data == TERMS_CALLBACK_DATA:
+            if state is not None:
+                await state.clear()
+            if event.callback_query.message:
+                await event.callback_query.message.answer(build_terms_text(), parse_mode="Markdown")
+            await event.callback_query.answer()
+            return
+
+        return await handler(event, data)
 
 
 def generate_referral_code():
@@ -198,19 +221,22 @@ async def start_handler(msg: Message, state: FSMContext):
     await msg.answer("Quick menu enabled below as well.", reply_markup=main_menu())
 
 
-@router.message(F.text == "📜 Terms & Rules")
-async def terms_handler(msg: Message):
+@router.message(F.text == TERMS_MENU_TEXT, StateFilter("*"))
+async def terms_handler(msg: Message, state: FSMContext):
+    await state.clear()
     await msg.answer(build_terms_text(), parse_mode="Markdown")
 
 
-@router.callback_query(F.data == "menu:terms")
-async def terms_handler_callback(cb: CallbackQuery):
+@router.callback_query(F.data == TERMS_CALLBACK_DATA)
+async def terms_handler_callback(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
     await cb.message.answer(build_terms_text(), parse_mode="Markdown")
     await cb.answer()
 
 
-@router.message(F.text == "⚖️ Support")
-async def support_handler(msg: Message):
+@router.message(F.text == "⚖️ Support", StateFilter("*"))
+async def support_handler(msg: Message, state: FSMContext):
+    await state.clear()
     await msg.answer(
         "⚖️ *Support*\n\n"
         "If you need help:\n"
@@ -223,7 +249,8 @@ async def support_handler(msg: Message):
 
 
 @router.callback_query(F.data == "menu:support")
-async def support_handler_callback(cb: CallbackQuery):
+async def support_handler_callback(cb: CallbackQuery, state: FSMContext):
+    await state.clear()
     await cb.message.answer(
         "⚖️ *Support*\n\n"
         "If you need help:\n"
