@@ -11,7 +11,7 @@ from aiogram.filters import Command
 from sqlalchemy import func
 from database import SessionLocal, User, Deal
 from keyboards import currency_keyboard, deal_actions, confirm_cancel, payment_method_keyboard
-from config import ESCROW_FEE_PERCENT
+from config import calculate_escrow_fee, get_escrow_fee_label
 
 router = Router()
 PAYMENT_METHODS = {
@@ -88,6 +88,7 @@ def create_deal_record(
         f"🔖 Transaction ID: `{txn_id}`\n"
         f"💳 Payment Method: *{payment_method}*\n"
         f"💰 Amount: *{data['amount']} {data['currency']}*\n"
+        f"📊 Escrow Fee: *${data['fee']}*\n"
         f"📝 Description: {data['description']}\n"
         f"👤 Seller: @{data['seller_username']}\n\n"
         "⚠️ Double check the network before sending funds.\n\n"
@@ -176,10 +177,11 @@ async def deal_amount(msg: Message, state: FSMContext):
     except ValueError:
         await msg.answer("❌ Invalid amount. Please enter a positive number:")
         return
-    fee = round(amount * ESCROW_FEE_PERCENT / 100, 2)
+    fee = calculate_escrow_fee(amount)
+    fee_label = get_escrow_fee_label(amount)
     await state.update_data(amount=amount, fee=fee)
     await msg.answer(
-        f"✅ Amount: *${amount}*\n📊 Escrow Fee ({ESCROW_FEE_PERCENT}%): *${fee}*\n\n"
+        f"✅ Amount: *${amount}*\n📊 Escrow Fee ({fee_label}): *${fee}*\n\n"
         "Step 3/5 — Choose the *currency*:",
         parse_mode="Markdown",
         reply_markup=currency_keyboard(),

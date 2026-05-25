@@ -107,6 +107,11 @@ waiting_payment → payment_submitted → funds_secured → in_progress → comp
                       ↘ cancelled
 ```
 
+## 💵 Escrow Fee
+
+- `$5.00` flat for deals of `$100` or less
+- `5.0%` for deals over `$100`
+
 ## 🌐 Hosting
 
 - **Free tier:** [Railway.app](https://railway.app) or [Render.com](https://render.com)

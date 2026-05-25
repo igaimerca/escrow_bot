@@ -22,6 +22,22 @@ def build_database_url() -> str:
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
 ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "123456789").split(",")))
+ADMIN_CONTACT_USERNAME = os.getenv("ADMIN_CONTACT_USERNAME", "@BruceWilliamsx")
 DATABASE_URL = build_database_url()
-ESCROW_FEE_PERCENT = float(os.getenv("ESCROW_FEE_PERCENT", "2.5"))
 BOT_NAME = "TrustHold_EscrowBot"
+
+ESCROW_FEE_FLAT = float(os.getenv("ESCROW_FEE_FLAT", "5.0"))
+ESCROW_FEE_HIGH_PERCENT = float(os.getenv("ESCROW_FEE_HIGH_PERCENT", "5.0"))
+ESCROW_FEE_THRESHOLD = float(os.getenv("ESCROW_FEE_THRESHOLD", "100"))
+
+
+def calculate_escrow_fee(amount: float) -> float:
+    if amount <= ESCROW_FEE_THRESHOLD:
+        return round(ESCROW_FEE_FLAT, 2)
+    return round(amount * ESCROW_FEE_HIGH_PERCENT / 100, 2)
+
+
+def get_escrow_fee_label(amount: float) -> str:
+    if amount <= ESCROW_FEE_THRESHOLD:
+        return f"${ESCROW_FEE_FLAT:.2f} flat"
+    return f"{ESCROW_FEE_HIGH_PERCENT:.1f}%"

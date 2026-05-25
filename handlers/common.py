@@ -13,13 +13,67 @@ from aiogram.types import CallbackQuery, FSInputFile, Message
 from aiogram.fsm.context import FSMContext
 from database import SessionLocal, User, init_db
 from keyboards import main_menu, main_menu_inline
-from config import BOT_NAME
+from config import ADMIN_CONTACT_USERNAME, BOT_NAME
 
 logger = logging.getLogger(__name__)
 router = Router()
 init_db()
 WELCOME_VIDEO_PATH = Path(__file__).resolve().parent.parent / "public" / "TrustHold Escrow Bolt.mp4"
 WELCOME_VIDEO_FILE_ID = os.getenv("WELCOME_VIDEO_FILE_ID", "")
+
+
+def build_terms_text() -> str:
+    return (
+        f"📜 {BOT_NAME} — Terms & Rules\n\n"
+        "By using this escrow bot, both buyer and seller agree to the following terms and conditions.\n\n"
+        "1. Neutral Middleman\n\n"
+        "The escrow bot acts only as a neutral middleman between both parties during transactions.\n\n"
+        "2. Deal Confirmation\n\n"
+        "Before funds are deposited, both buyer and seller must clearly agree on:\n"
+        "• Product/Service\n"
+        "• Amount\n"
+        "• Payment Method\n"
+        "• Delivery Terms\n\n"
+        "3. Prohibited Activities\n\n"
+        "This bot may NOT be used for:\n"
+        "• Fraud or scams\n"
+        "• Stolen accounts or stolen goods\n"
+        "• Illegal products/services\n"
+        "• Money laundering\n"
+        "• Any activity that violates laws or Telegram policies\n\n"
+        "Any prohibited transaction may be canceled without notice.\n\n"
+        "4. Escrow Deposit\n\n"
+        "Funds must be fully deposited into escrow before the seller begins delivery.\n\n"
+        "5. Release of Funds\n\n"
+        "Funds will only be released when:\n"
+        "• The buyer confirms delivery, OR\n"
+        "• Staff/Admin resolves the dispute\n\n"
+        "6. Disputes\n\n"
+        "In case of a dispute:\n"
+        "• Both parties must provide valid proof/screenshots\n"
+        "• Admin decisions are final\n"
+        "• Fake or edited evidence may result in a permanent ban\n\n"
+        "7. Refund Policy\n\n"
+        "Refunds are only issued if:\n"
+        "• The seller fails to deliver, OR\n"
+        "• Both parties agree to cancel the deal\n\n"
+        "Network or transaction fees may not be refundable.\n\n"
+        "8. User Responsibility\n\n"
+        "Users are responsible for:\n"
+        "• Double-checking wallet addresses\n"
+        "• Verifying usernames before sending funds\n"
+        "• Keeping their Telegram account secure\n\n"
+        "The bot is not responsible for losses caused by user mistakes.\n\n"
+        "9. Fees\n\n"
+        "All escrow fees will be shown before the transaction begins.\n"
+        "• $5.00 flat for deals of $100 or less\n"
+        "• 5.0% for deals over $100\n\n"
+        "10. Right to Refuse Service\n\n"
+        "The bot/admin reserves the right to refuse or cancel any transaction suspected of fraud, abuse, or suspicious activity.\n\n"
+        "⚠️ Warning:\n"
+        "Never send funds outside the escrow bot.\n"
+        "Admins will never DM first."
+    )
 
 
 def generate_referral_code():
@@ -132,8 +186,8 @@ async def start_handler(msg: Message, state: FSMContext):
         "🔒 Funds are protected until the admin releases them.\n\n"
         "Use the menu below to get started:\n\n"
         "💵 *ESCROW FEE*\n"
-        "• $5.0 if under $100\n"
-        "• 5.0% if over $100\n\n"
+        "• $5.00 flat for deals of $100 or less\n"
+        "• 5.0% for deals over $100\n\n"
         "For full terms and conditions, select 'Terms & Rules' in the menu."
     )
     try:
@@ -146,110 +200,12 @@ async def start_handler(msg: Message, state: FSMContext):
 
 @router.message(F.text == "📜 Terms & Rules")
 async def terms_handler(msg: Message):
-    text = (
-        f"📜 {BOT_NAME} — Terms & Rules\n\n"
-        "By using this escrow bot, both buyer and seller agree to the following terms and conditions.\n\n"
-        "1. Neutral Middleman\n\n"
-        "The escrow bot acts only as a neutral middleman between both parties during transactions.\n\n"
-        "2. Deal Confirmation\n\n"
-        "Before funds are deposited, both buyer and seller must clearly agree on:\n"
-        "• Product/Service\n"
-        "• Amount\n"
-        "• Payment Method\n"
-        "• Delivery Terms\n\n"
-        "3. Prohibited Activities\n\n"
-        "This bot may NOT be used for:\n"
-        "• Fraud or scams\n"
-        "• Stolen accounts or stolen goods\n"
-        "• Illegal products/services\n"
-        "• Money laundering\n"
-        "• Any activity that violates laws or Telegram policies\n\n"
-        "Any prohibited transaction may be canceled without notice.\n\n"
-        "4. Escrow Deposit\n\n"
-        "Funds must be fully deposited into escrow before the seller begins delivery.\n\n"
-        "5. Release of Funds\n\n"
-        "Funds will only be released when:\n"
-        "• The buyer confirms delivery, OR\n"
-        "• Staff/Admin resolves the dispute\n\n"
-        "6. Disputes\n\n"
-        "In case of a dispute:\n"
-        "• Both parties must provide valid proof/screenshots\n"
-        "• Admin decisions are final\n"
-        "• Fake or edited evidence may result in a permanent ban\n\n"
-        "7. Refund Policy\n\n"
-        "Refunds are only issued if:\n"
-        "• The seller fails to deliver, OR\n"
-        "• Both parties agree to cancel the deal\n\n"
-        "Network or transaction fees may not be refundable.\n\n"
-        "8. User Responsibility\n\n"
-        "Users are responsible for:\n"
-        "• Double-checking wallet addresses\n"
-        "• Verifying usernames before sending funds\n"
-        "• Keeping their Telegram account secure\n\n"
-        "The bot is not responsible for losses caused by user mistakes.\n\n"
-        "9. Fees\n\n"
-        "All escrow fees will be shown before the transaction begins.\n\n"
-        "10. Right to Refuse Service\n\n"
-        "The bot/admin reserves the right to refuse or cancel any transaction suspected of fraud, abuse, or suspicious activity.\n\n"
-        "⚠️ Warning:\n"
-        "Never send funds outside the escrow bot.\n"
-        "Admins will never DM first."
-    )
-    await msg.answer(text, parse_mode="Markdown")
+    await msg.answer(build_terms_text(), parse_mode="Markdown")
 
 
 @router.callback_query(F.data == "menu:terms")
 async def terms_handler_callback(cb: CallbackQuery):
-    text = (
-        f"📜 {BOT_NAME} — Terms & Rules\n\n"
-        "By using this escrow bot, both buyer and seller agree to the following terms and conditions.\n\n"
-        "1. Neutral Middleman\n\n"
-        "The escrow bot acts only as a neutral middleman between both parties during transactions.\n\n"
-        "2. Deal Confirmation\n\n"
-        "Before funds are deposited, both buyer and seller must clearly agree on:\n"
-        "• Product/Service\n"
-        "• Amount\n"
-        "• Payment Method\n"
-        "• Delivery Terms\n\n"
-        "3. Prohibited Activities\n\n"
-        "This bot may NOT be used for:\n"
-        "• Fraud or scams\n"
-        "• Stolen accounts or stolen goods\n"
-        "• Illegal products/services\n"
-        "• Money laundering\n"
-        "• Any activity that violates laws or Telegram policies\n\n"
-        "Any prohibited transaction may be canceled without notice.\n\n"
-        "4. Escrow Deposit\n\n"
-        "Funds must be fully deposited into escrow before the seller begins delivery.\n\n"
-        "5. Release of Funds\n\n"
-        "Funds will only be released when:\n"
-        "• The buyer confirms delivery, OR\n"
-        "• Staff/Admin resolves the dispute\n\n"
-        "6. Disputes\n\n"
-        "In case of a dispute:\n"
-        "• Both parties must provide valid proof/screenshots\n"
-        "• Admin decisions are final\n"
-        "• Fake or edited evidence may result in a permanent ban\n\n"
-        "7. Refund Policy\n\n"
-        "Refunds are only issued if:\n"
-        "• The seller fails to deliver, OR\n"
-        "• Both parties agree to cancel the deal\n\n"
-        "Network or transaction fees may not be refundable.\n\n"
-        "8. User Responsibility\n\n"
-        "Users are responsible for:\n"
-        "• Double-checking wallet addresses\n"
-        "• Verifying usernames before sending funds\n"
-        "• Keeping their Telegram account secure\n\n"
-        "The bot is not responsible for losses caused by user mistakes.\n\n"
-        "9. Fees\n\n"
-        "All escrow fees will be shown before the transaction begins.\n\n"
-        "10. Right to Refuse Service\n\n"
-        "The bot/admin reserves the right to refuse or cancel any transaction suspected of fraud, abuse, or suspicious activity.\n\n"
-        "⚠️ Warning:\n"
-        "Never send funds outside the escrow bot.\n"
-        "Admins will never DM first."
-    )
-    await cb.message.answer(text, parse_mode="Markdown")
+    await cb.message.answer(build_terms_text(), parse_mode="Markdown")
     await cb.answer()
 
 
@@ -259,7 +215,7 @@ async def support_handler(msg: Message):
         "⚖️ *Support*\n\n"
         "If you need help:\n"
         "• Use /dispute inside a deal\n"
-        "• Contact @YourAdminUsername\n"
+        f"• Contact {ADMIN_CONTACT_USERNAME}\n"
         "• Provide your transaction ID\n\n"
         "⏱️ Response time: within 24 hours.",
         parse_mode="Markdown",
@@ -272,7 +228,7 @@ async def support_handler_callback(cb: CallbackQuery):
         "⚖️ *Support*\n\n"
         "If you need help:\n"
         "• Use /dispute inside a deal\n"
-        "• Contact @YourAdminUsername\n"
+        f"• Contact {ADMIN_CONTACT_USERNAME}\n"
         "• Provide your transaction ID\n\n"
         "⏱️ Response time: within 24 hours.",
         parse_mode="Markdown",
