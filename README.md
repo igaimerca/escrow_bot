@@ -1,4 +1,4 @@
-# 🛡️ TrustHold_EscrowBot
+# 🛡️ TrustHold EscrowBot
 
 A fully-featured Telegram escrow bot built with Python (aiogram 3).
 
